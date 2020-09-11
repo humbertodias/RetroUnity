@@ -30,13 +30,6 @@ namespace RetroUnity {
         private static Speaker _speaker;
 
         public static Texture2D tex;
-        public static int pix;
-        public static int w;
-        public static int h;
-        public static int p;
-
-        public static byte[] Src;
-        public static byte[] Dst;
     
         public enum PixelFormat {
             // 0RGB1555, native endian. 0 bit must be set to 0.
@@ -134,13 +127,6 @@ namespace RetroUnity {
             private PixelFormat _pixelFormat;
             private bool _requiresFullPath;
             private SystemAVInfo _av;
-            private Pixel[] _frameBuffer;
-            public static int Pix = 0;
-            public static int w = 0;
-            public static int h = 0;
-            public static int p = 0;
-            public static uint Button;
-            public static uint Keep;
 
             public IDLLHandler DLLHandler;
 
@@ -202,130 +188,33 @@ namespace RetroUnity {
                 return _av;
             }
 
-            public Pixel[] GetFramebuffer() {
-                return _frameBuffer;
-            }
+            private GraphicsProcessor graphicsProcessor = new GraphicsProcessor();
 
             private unsafe void RetroVideoRefresh(void* data, uint width, uint height, uint pitch) {
+                if (graphicsProcessor != null)
+                {
+                    int intWidth = (int) width;
+                    int intHeight = (int) height;
+                    int intPitch = (int) pitch;
 
-                // Process Pixels one by one for now...this is not the best way to do it 
-                // should be using memory streams or something
-
-                //Declare the pixel buffer to pass on to the renderer
-                if(_frameBuffer == null || _frameBuffer.Length != width * height)
-                    _frameBuffer = new Pixel[width * height];
-
-                //Get the array from unmanaged memory as a pointer
-                var pixels = (IntPtr)data;
-                //Gets The pointer to the row start to use with the pitch
-                //IntPtr rowStart = pixels;
-
-                //Get the size to move the pointer
-                //int size = 0;
-
-                uint i;
-                uint j;
-
-                switch (_pixelFormat) {
-                    case PixelFormat.RetroPixelFormat_0RGB1555:
-
-                        LibretroWrapper.w = Convert.ToInt32(width);
-                        LibretroWrapper.h = Convert.ToInt32(height);
-                        if (tex == null) {
-                            tex = new Texture2D(LibretroWrapper.w, LibretroWrapper.h, TextureFormat.RGB565, false);
-                        }
-                        LibretroWrapper.p = Convert.ToInt32(pitch);
-
-                        //size = Marshal.SizeOf(typeof(short));
-                        for (i = 0; i < height; i++) {
-                            for (j = 0; j < width; j++) {
-                                short packed = Marshal.ReadInt16(pixels);
-                                _frameBuffer[i * width + j] = new Pixel {
-                                    Alpha = 1
-                                    ,
-                                    Red = ((packed >> 10) & 0x001F) / 31.0f
-                                    ,
-                                    Green = ((packed >> 5) & 0x001F) / 31.0f
-                                    ,
-                                    Blue = (packed & 0x001F) / 31.0f
-                                };
-                                var color = new Color(((packed >> 10) & 0x001F) / 31.0f, ((packed >> 5) & 0x001F) / 31.0f, (packed & 0x001F) / 31.0f, 1.0f);
-                                tex.SetPixel((int)i, (int)j, color);
-                                //pixels = (IntPtr)((int)pixels + size);
-                            }
-                            tex.filterMode = FilterMode.Trilinear;
-                            tex.Apply();
-                            //pixels = (IntPtr)((int)rowStart + pitch);
-                            //rowStart = pixels;
-                        }
-                        break;
-                    case PixelFormat.RetroPixelFormatXRGB8888:
-
-                        LibretroWrapper.w = Convert.ToInt32(width);
-                        LibretroWrapper.h = Convert.ToInt32(height);
-                        if (tex == null) {
-                            tex = new Texture2D(LibretroWrapper.w, LibretroWrapper.h, TextureFormat.RGB565, false);
-                        }
-                        LibretroWrapper.p = Convert.ToInt32(pitch);
-
-                        //size = Marshal.SizeOf(typeof(int));
-                        for (i = 0; i < height; i++) {
-                            for (j = 0; j < width; j++) {
-                                int packed = Marshal.ReadInt32(pixels);
-                                _frameBuffer[i * width + j] = new Pixel {
-                                    Alpha = 1,
-                                    Red = ((packed >> 16) & 0x00FF) / 255.0f,
-                                    Green = ((packed >> 8) & 0x00FF) / 255.0f,
-                                    Blue = (packed & 0x00FF) / 255.0f
-                                };
-                                var color = new Color(((packed >> 16) & 0x00FF) / 255.0f, ((packed >> 8) & 0x00FF) / 255.0f, (packed & 0x00FF) / 255.0f, 1.0f);
-                                tex.SetPixel((int)i, (int)j, color);
-                                //pixels = (IntPtr)((int)pixels + size);
-                            }
-                            //pixels = (IntPtr)((int)rowStart + pitch);
-                            //rowStart = pixels;
-
-                        }
-
-                        tex.filterMode = FilterMode.Trilinear;
-                        tex.Apply();
-                        break;
-
-                    case PixelFormat.RetroPixelFormatRGB565:
-
-                        var imagedata565 = new IntPtr(data);
-                        LibretroWrapper.w = Convert.ToInt32(width);
-                        LibretroWrapper.h = Convert.ToInt32(height);
-                        if (tex == null) {
-                            tex = new Texture2D(LibretroWrapper.w, LibretroWrapper.h, TextureFormat.RGB565, false);
-                        }
-                        LibretroWrapper.p = Convert.ToInt32(pitch);
-                        int srcsize565 = 2 * (LibretroWrapper.p * LibretroWrapper.h);
-                        int dstsize565 = 2 * (LibretroWrapper.w * LibretroWrapper.h);
-                        if (Src == null || Src.Length != srcsize565)
-                            Src = new byte[srcsize565];
-                        if (Dst == null || Dst.Length != dstsize565)
-                            Dst = new byte[dstsize565];
-                        Marshal.Copy(imagedata565, Src, 0, srcsize565);
-                        int m565 = 0;
-                        for (int y = 0; y < LibretroWrapper.h; y++) {
-                            for (int k = 0 * 2 + y * LibretroWrapper.p; k < LibretroWrapper.w * 2 + y * LibretroWrapper.p; k++) {
-                                Dst[m565] = Src[k];
-                                m565++;
-                            }
-                        }
-                        tex.LoadRawTextureData(Dst);
-                        tex.filterMode = FilterMode.Trilinear;
-                        tex.Apply();
-                        break;
-                    case PixelFormat.RetroPixelFormatUnknown:
-                        _frameBuffer = null;
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    tex = graphicsProcessor.Texture;
+                    switch (_pixelFormat)
+                    {
+                        case PixelFormat.RetroPixelFormat_0RGB1555:
+                            graphicsProcessor.ProcessFrame0RGB1555((ushort*) data, intWidth, intHeight, intPitch);
+                            break;
+                        case PixelFormat.RetroPixelFormatXRGB8888:
+                            graphicsProcessor.ProcessFrameXRGB8888((uint*) data, intWidth, intHeight, intPitch);
+                            break;
+                        case PixelFormat.RetroPixelFormatRGB565:
+                            graphicsProcessor.ProcessFrameRGB565((ushort*) data, intWidth, intHeight, intPitch);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
             }
-
+            
             private void RetroAudioSample(short left, short right) {
                 // Unused.
             }
