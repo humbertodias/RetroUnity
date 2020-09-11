@@ -128,9 +128,6 @@ namespace RetroUnity {
         }
 
         public class Wrapper {
-            public const int AudioBatchSize = 4096;
-            public static List<float> AudioBatch = new List<float>(65536);
-            public static int BatchPosition;
             private PixelFormat _pixelFormat;
             private bool _requiresFullPath;
             private SystemAVInfo _av;
@@ -327,30 +324,24 @@ namespace RetroUnity {
             }
 
             private void RetroAudioSample(short left, short right) {
-                // Unused.
+                float[] floatBuffer = {
+                    Mathf.Clamp(left * -0.000030517578125f, -1.0f, 1.0f),
+                    Mathf.Clamp(right * -0.000030517578125f, -1.0f, 1.0f)
+                };
+
+                _speaker.ProcessSamples(floatBuffer);
             }
         
-            private unsafe void RetroAudioSampleBatch(short* data, uint frames) {
-                //for (int i = 0; i < (int) frames; i++) {
-                //    short chunk = Marshal.ReadInt16((IntPtr) data);
-                //    data += sizeof (short); // Set pointer to next chunk.
-                //    float value = chunk / 32768f; // Divide by Int16 max to get correct float value.
-                //    value = Mathf.Clamp(value, -1.0f, 1.0f); // Unity's audio only takes values between -1 and 1.
+            private unsafe uint RetroAudioSampleBatch(short* data, uint frames) {
+                var floatBuffer = new float[frames * 2];
 
-                //    AudioBatch[BatchPosition] = value;
-                //    BatchPosition++;
-
-                //    // When the batch is filled send it to the speakers.
-                //    if (BatchPosition >= AudioBatchSize - 1) {
-                //        _speaker.UpdateAudio(AudioBatch);
-                //        BatchPosition = 0;
-                //    }
-                //}
-                for (int i = 0; i < frames * 2; ++i) {
-                    float value = data[i] * 0.000030517578125f;
-                    value = Mathf.Clamp(value, -1.0f, 1.0f); // Unity's audio only takes values between -1 and 1.
-                    AudioBatch.Add(value);
+                for (var i = 0; i < floatBuffer.Length; ++i)
+                {
+                    floatBuffer[i] = Mathf.Clamp(data[i] * 0.000030517578125f, -1.0f, 1.0f);
                 }
+
+                _speaker.ProcessSamples(floatBuffer);
+                return frames;
             }
 
             private void RetroInputPoll() {
@@ -560,7 +551,7 @@ namespace RetroUnity {
             public delegate void RetroAudioSampleDelegate(short left, short right);
 
             //typedef size_t (*retro_audio_sample_batch_t)(const int16_t *data, size_t frames);
-            public delegate void RetroAudioSampleBatchDelegate(short* data, uint frames);
+            public delegate uint RetroAudioSampleBatchDelegate(short* data, uint frames);
 
             //typedef void (*retro_input_poll_t)(void);
             public delegate void RetroInputPollDelegate();
