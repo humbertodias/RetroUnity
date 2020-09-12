@@ -1,6 +1,9 @@
-﻿using System.IO;
-using RetroUnity.Utility;
+﻿using System;
+using System.Collections;
+using System.IO;
+using System.Net;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace RetroUnity {
     public class GameManager : MonoBehaviour {
@@ -33,21 +36,53 @@ namespace RetroUnity {
             }
         }
 
-        public void LoadRom(string path) {
+        private IEnumerator RequestRoutine(string url, Action<byte[]> callback = null)
+        {
+            // Using the static constructor
+            var request = UnityWebRequest.Get(url);
+ 
+            // Wait for the response and then get our data
+            yield return request.SendWebRequest();
+            var data = request.downloadHandler.data;
+ 
+            // This isn't required, but I prefer to pass in a callback so that I can
+            // act on the response data outside of this function
+            if (callback != null)
+                callback(data);
+        }        
+        
+        public void LoadRom(string romPath) {
 #if UNITY_EDITOR || UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX
             // If the file doesn't exist the application gets stuck in a loop.
-            if (!File.Exists(path))
+            if (!File.Exists(romPath))
             {
-                Debug.LogError(path + " not found.");
+                Debug.LogError(romPath + " not found.");
                 return;
             }
 #endif
+
             Display.material.color = Color.white;
 
             wrapper = new LibretroWrapper.Wrapper(CoreName);
-
             wrapper.Init();
-            wrapper.LoadGame(path);
+            
+#if UNITY_ANDROID
+        Action<byte[]> AfterReadingRomFromAPK = bytes =>
+        {
+            // Using persistentDataPath
+            romPath = Path.Combine(Application.persistentDataPath, RomName);
+            // Write
+            File.WriteAllBytes(romPath, bytes);
+            Debug.Log($"Copied to {romPath}");
+            // Load Rom
+            wrapper.LoadGame(romPath);
+        };
+        // Async
+        StartCoroutine(RequestRoutine(romPath, AfterReadingRomFromAPK));
+#else
+            wrapper.LoadGame(romPath);
+#endif            
+            
         }
 
         private void OnDestroy() {

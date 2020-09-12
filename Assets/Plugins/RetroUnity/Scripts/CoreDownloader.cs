@@ -31,7 +31,7 @@ namespace RetroUnity
         {
             var coreNames = new List<string>()
             {
-                "snes9x","blastem", "nestopia"
+                "snes9x","blastem", "nestopia", "mgba"
             };
             foreach (var coreName in coreNames)
             {
@@ -51,8 +51,9 @@ namespace RetroUnity
             }
         }
         
-        void unzipCore(BuildTarget buildTarget, string zipPath, string extractDirectory)
+        List<string> unzipCore(string zipPath, string extractDirectory)
         {
+            List<string> assets = new List<string>();
             try
             {
                 using (var archive = ZipFile.OpenRead(zipPath))
@@ -67,17 +68,7 @@ namespace RetroUnity
                         }
 
                         entry.ExtractToFile(destinationPath);
-                        
-                        var relativePath = destinationPath.Substring(destinationPath.IndexOf("Assets"));
-                        AssetDatabase.ImportAsset(relativePath);
-
-
-                        // Only for plugins
-                        if (relativePath.Contains("Plugins"))
-                        {
-                            setNativePluginLibrary(buildTarget, relativePath);
-                        }
-
+                        assets.Add(destinationPath);
                     }
                 }
             }
@@ -86,7 +77,9 @@ namespace RetroUnity
                 File.Delete(zipPath);
             }
 
+            return assets;
         }
+
         
         static void DownloadCores(string romName)
         {
@@ -113,9 +106,9 @@ namespace RetroUnity
                 {
                     var zipPath = coreDownloader.DownloadFile(url, extractDirectory);
                     Debug.Log($"File successfully downloaded and saved to {zipPath}");
-                    coreDownloader.unzipCore(buildTarget, zipPath, extractDirectory);
+                    var unzippedAssets = coreDownloader.unzipCore( zipPath, extractDirectory);
                     Debug.Log($"Unzipping successfully downloaded and saved to {item.Value}");
-
+                    ImportAssets(buildTarget, unzippedAssets);
                 }
                 catch (Exception e)
                 {
@@ -126,14 +119,40 @@ namespace RetroUnity
 
         }
 
-        static void setNativePluginLibrary(BuildTarget buildTarget, string pluginRelativePath)
+        
+        static void ImportAssets(BuildTarget buildTarget, List<string> assetPaths)
+        {
+            foreach (var assetPath in assetPaths)
+            {
+                var relativePath = assetPath.Substring(assetPath.IndexOf("Assets"));
+                AssetDatabase.ImportAsset(relativePath);
+
+                // Only for plugins
+                if (assetPath.Contains("Plugins"))
+                {
+                    SetNativePluginLibrary(buildTarget, "ARMv7", relativePath);
+                }
+                        
+            }
+            
+        }
+
+        static void SetNativePluginLibrary(BuildTarget buildTarget, string cpu, string relativePath)
         {
             // native library, avaiable only for mobile
-            var nativePlugin = AssetImporter.GetAtPath(pluginRelativePath) as PluginImporter;
+            var nativePlugin = AssetImporter.GetAtPath(relativePath) as PluginImporter;
+            // Exclude
+            nativePlugin.SetExcludeEditorFromAnyPlatform(true);
+            nativePlugin.SetExcludeFromAnyPlatform(buildTarget, false);
+            // Include
             nativePlugin.SetCompatibleWithEditor(false);
             nativePlugin.SetCompatibleWithAnyPlatform(false);
             nativePlugin.SetCompatibleWithPlatform(buildTarget, true);
-            nativePlugin.SetPlatformData(buildTarget, "CompileFlags", "-fno-objc-arc");                        
+            // Specific
+            nativePlugin.SetPlatformData(buildTarget, "CPU", cpu);
+            // Forcing flush
+            EditorUtility.SetDirty(nativePlugin);
+            AssetDatabase.WriteImportSettingsIfDirty(relativePath);
         }
         
     }
