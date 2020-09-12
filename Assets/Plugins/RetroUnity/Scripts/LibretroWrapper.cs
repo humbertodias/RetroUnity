@@ -23,11 +23,13 @@ using System.IO;
 using System.Runtime.InteropServices;
 using RetroUnity.Utility;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace RetroUnity {
     public class LibretroWrapper : MonoBehaviour {
     
         private static Speaker _speaker;
+        private static InputProcessor _inputProcessor;
 
         public static Texture2D tex;
         public static int pix;
@@ -58,6 +60,7 @@ namespace RetroUnity {
 
         private void Start() {
             _speaker = GameObject.Find("Speaker").GetComponent<Speaker>();
+            _inputProcessor = GameObject.Find("Joystick").GetComponent<InputProcessor>();
         }
 
         //Shouldn't be part of the wrapper, will remove later
@@ -353,46 +356,13 @@ namespace RetroUnity {
                 }
             }
 
-            private void RetroInputPoll() {
+            private void RetroInputPoll()
+            {
             }
 
-            public static short RetroInputState(uint port, uint device, uint index, uint id) {
-                switch (id) {
-                    case 0:
-                        return Input.GetKey(KeyCode.Z) || Input.GetButton("B") ? (short) 1 : (short) 0; // B
-                    case 1:
-                        return Input.GetKey(KeyCode.A) || Input.GetButton("Y") ? (short) 1 : (short) 0; // Y
-                    case 2:
-                        return Input.GetKey(KeyCode.Space) || Input.GetButton("SELECT") ? (short) 1 : (short) 0; // SELECT
-                    case 3:
-                        return Input.GetKey(KeyCode.Return) || Input.GetButton("START") ? (short) 1 : (short) 0; // START
-                    case 4:
-                        return Input.GetKey(KeyCode.UpArrow) || Input.GetAxisRaw("DpadX") >= 1.0f ? (short) 1 : (short) 0; // UP
-                    case 5:
-                        return Input.GetKey(KeyCode.DownArrow) || Input.GetAxisRaw("DpadX") <= -1.0f ? (short) 1 : (short) 0; // DOWN
-                    case 6:
-                        return Input.GetKey(KeyCode.LeftArrow) || Input.GetAxisRaw("DpadY") <= -1.0f ? (short) 1 : (short) 0; // LEFT
-                    case 7:
-                        return Input.GetKey(KeyCode.RightArrow) || Input.GetAxisRaw("DpadY") >= 1.0f ? (short) 1 : (short) 0; // RIGHT
-                    case 8:
-                        return Input.GetKey(KeyCode.X) || Input.GetButton("A") ? (short) 1 : (short) 0; // A
-                    case 9:
-                        return Input.GetKey(KeyCode.S) || Input.GetButton("X") ? (short) 1 : (short) 0; // X
-                    case 10:
-                        return Input.GetKey(KeyCode.Q) || Input.GetButton("L") ? (short) 1 : (short) 0; // L
-                    case 11:
-                        return Input.GetKey(KeyCode.W) || Input.GetButton("R") ? (short) 1 : (short) 0; // R
-                    case 12:
-                        return Input.GetKey(KeyCode.E) ? (short) 1 : (short) 0;
-                    case 13:
-                        return Input.GetKey(KeyCode.R) ? (short) 1 : (short) 0;
-                    case 14:
-                        return Input.GetKey(KeyCode.T) ? (short) 1 : (short) 0;
-                    case 15:
-                        return Input.GetKey(KeyCode.Y) ? (short) 1 : (short) 0;
-                    default:
-                        return 0;
-                }
+            public static short RetroInputState(uint port, uint device, uint index, uint id)
+            {
+                return _inputProcessor.ProcessInputState(port, device, index, id);
             }
 
             private unsafe bool RetroEnvironment(uint cmd, void* data) {
