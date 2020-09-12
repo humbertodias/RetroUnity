@@ -323,3 +323,6 @@ Assets/StreamingAssets/*.dll
 Assets/StreamingAssets/*.dylib
 # Linux
 Assets/StreamingAssets/*.so
+
+#Mac
+.DS_Store
