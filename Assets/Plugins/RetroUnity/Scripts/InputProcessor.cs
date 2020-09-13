@@ -13,6 +13,7 @@ namespace RetroUnity
 
         private void Awake()
         {
+
             InputSystem.onActionChange +=
                 (obj, change) =>
                 {
@@ -33,6 +34,9 @@ namespace RetroUnity
                             break;
                     }
                 };
+
+            // Player 1 by default
+            action["P1"] = true;
         }
 
         // https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/Gamepad.html
@@ -43,6 +47,11 @@ namespace RetroUnity
             {
                 ProcessGamePad(gamepad);
             }
+        }
+
+        public void DoAction(string key)
+        {
+           action[key] = true;
         }
 
         private void ProcessGamePad(Gamepad gamepad)
@@ -66,7 +75,7 @@ namespace RetroUnity
         }
         public short ProcessInputState(uint port, uint device, uint index, uint id)
         {
-            //currentAction = $"port: {port} device: {device} index: {index} id: {id}";
+            currentAction = $"port: {port} device: {device} index: {index} id: {id}";
 
             switch(device)
             {
@@ -79,42 +88,47 @@ namespace RetroUnity
 
             }
         }
+        
+        short hasAction(string key)
+        {
+            return action.ContainsKey(key) && action[key] ? (short)1 : (short)0;
+        }
 
         short ProcessJoyPad(uint id)
         {
                 switch (id) {
                 case 0:
-                    return action.ContainsKey("Cross") && action["Cross"] ? (short) 1 : (short) 0; // B
+                    return hasAction("Cross"); // B
                 case 1:
-                    return action.ContainsKey("Square") && action["Square"] ? (short) 1 : (short) 0; // Y
+                    return hasAction("Square") ; // Y
                 case 2:
-                    return action.ContainsKey("Select") && action["Select"] ? (short) 1 : (short) 0; // SELECT
+                    return hasAction("Select"); // SELECT
                 case 3:
-                    return action.ContainsKey("Start") && action["Start"] ? (short) 1 : (short) 0; // START
+                    return hasAction("Start") ; // START
                 case 4:
-                    return action.ContainsKey("Up") && action["Up"] ? (short) 1 : (short) 0; // UP
+                    return hasAction("Up"); // UP
                 case 5:
-                    return action.ContainsKey("Down") && action["Down"] ? (short) 1 : (short) 0; // DOWN
+                    return hasAction("Down"); // DOWN
                 case 6:
-                    return action.ContainsKey("Left") && action["Left"] ? (short) 1 : (short) 0; // LEFT
+                    return hasAction("Left"); // LEFT
                 case 7:
-                    return action.ContainsKey("Right") && action["Right"] ? (short) 1 : (short) 0; // RIGHT
+                    return hasAction("Right"); // RIGHT
                 case 8:
-                    return action.ContainsKey("Circle") && action["Circle"] ? (short) 1 : (short) 0; // A
+                    return hasAction("Circle"); // A
                 case 9:
-                    return action.ContainsKey("Triangle") && action["Triangle"] ? (short) 1 : (short) 0; // X
+                    return hasAction("Triangle"); // X
                 case 10:
-                    return action.ContainsKey("L1") && action["L1"] ? (short) 1 : (short) 0; // L
+                    return hasAction("L1"); // L
                 case 11:
-                    return action.ContainsKey("R1") && action["R1"] ? (short) 1 : (short) 0; // R
+                    return hasAction("R1"); // R
                 case 12:
-                    return action.ContainsKey("L2") && action["L2"] ? (short)1 : (short)0; //L2?
+                    return hasAction("L2"); //L2?
                 case 13:
-                    return action.ContainsKey("R2") && action["R2"] ? (short)1 : (short)0; //R2?
+                    return hasAction("R2"); //R2?
                 case 14:
-                    return action.ContainsKey("L3") && action["L3"] ? (short)1 : (short)0; //L3? (Left stick press?)
+                    return hasAction("L3"); //L3? (Left stick press?)
                 case 15:
-                    return action.ContainsKey("R3") && action["R3"] ? (short)1 : (short)0; //R3? (Right stick press?)
+                    return hasAction("R3"); //R3? (Right stick press?)
                 default:
                     return 0;
             }            
@@ -138,18 +152,18 @@ namespace RetroUnity
                         switch (id)
                         {
                             case 0:
-                                return action.ContainsKey("Left") && action["Left"] ? (short)1 : (short)0; //L analog X
+                                return hasAction("Left"); //L analog X
                             case 1:
-                                return action.ContainsKey("Up") && action["Up"] ? (short)1 : (short)0; //L analog Y
+                                return hasAction("Up"); //L analog Y
                             default: return 0;
                         }
                     case 1: //analog right (stick)
                         switch (id)
                         {
                             case 0:
-                                return action.ContainsKey("Right") && action["Right"] ? (short)1 : (short)0; //R analog X
+                                return hasAction("Right"); //R analog X
                             case 1:
-                                return action.ContainsKey("Down") && action["Down"] ? (short)1 : (short)0; //R analog Y
+                                return hasAction("Down"); //R analog Y
                             default: return 0;
                         }
                     case 2: //analog button?
