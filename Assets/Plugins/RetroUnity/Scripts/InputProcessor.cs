@@ -10,6 +10,8 @@ namespace RetroUnity
     {
         private string currentAction = "";
         Dictionary<string, bool> action = new Dictionary<string,bool>();
+        
+        public bool[] _players = {true, false, false, false, false};
 
         private void Awake()
         {
@@ -34,9 +36,6 @@ namespace RetroUnity
                             break;
                     }
                 };
-
-            // Player 1 by default
-            action["P1"] = true;
         }
 
         // https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/Gamepad.html
@@ -73,10 +72,19 @@ namespace RetroUnity
             action["R2"] = gamepad[GamepadButton.RightStick].isPressed;
             action["R3"] = gamepad[GamepadButton.RightTrigger].isPressed;
         }
+        
+        public void togglePlayer(int port)
+        {
+            _players[port] = !_players[port];
+        }
+
         public short ProcessInputState(uint port, uint device, uint index, uint id)
         {
             currentAction = $"port: {port} device: {device} index: {index} id: {id}";
-
+            
+            // ignoring disabled players
+            if( !_players[port] ) return 0;
+            
             switch(device)
             {
                 case 1: //retro device joypad
@@ -176,11 +184,14 @@ namespace RetroUnity
         {
             return currentAction;
         }
-
         private void OnGUI() {
-            GUI.Label(new Rect(Screen.width - 200, 0, 300f, 20f), ToString());
+            GUI.Label(new Rect(Screen.width - 250, 75, 300f, 20f), ToString());
         }
 
+        public void ProcessControllerPortDevice(uint port, uint device)
+        {
+            Debug.Log("port {port} device {device}");
+        }
     }
     
 }
