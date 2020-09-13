@@ -627,7 +627,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CoreName: snes9x_libretro
-  RomName: Controller Test Cartridge.sfc
+  RomName: Chrono Trigger (USA).sfc
   Display: {fileID: 635089074}
 --- !u!1001 &1178825821
 PrefabInstance:
