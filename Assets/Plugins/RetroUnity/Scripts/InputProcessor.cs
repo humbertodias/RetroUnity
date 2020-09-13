@@ -10,66 +10,60 @@ namespace RetroUnity
     {
         private string currentAction = "";
         Dictionary<string, bool> action = new Dictionary<string,bool>();
-        
+
         private void Awake()
         {
-
             InputSystem.onActionChange +=
-            (obj, change) =>
-            {
-                // obj can be either an InputAction or an InputActionMap
-                // depending on the specific change.
-                switch (change)
+                (obj, change) =>
                 {
-                    case InputActionChange.ActionStarted:
-                    case InputActionChange.ActionPerformed:
-                        var keyActionTrue = ((InputAction) obj).name;
-                        action[keyActionTrue] = true;
-                        currentAction = $"{((InputAction) obj).name}  {change}";
-                        break;
-                    case InputActionChange.ActionCanceled:
-                        var keyActionFalse = ((InputAction) obj).name;
-                        action[keyActionFalse] = false;
-                        currentAction = $"{((InputAction) obj).name}  {change}";
-                        break;
-                }
-            };
-
-            
-            InputSystem.onEvent +=
-                (eventPtr, device) =>
-                {
-                    // Ignore anything that isn't a state event.
-                    if (!eventPtr.IsA<StateEvent>() && !eventPtr.IsA<DeltaStateEvent>())
-                        return;
-
-                    var gamepad = device as Gamepad;
-                    if (gamepad == null)
+                    // obj can be either an InputAction or an InputActionMap
+                    // depending on the specific change.
+                    switch (change)
                     {
-                        // Event isn't for a gamepad or device ID is no longer valid.
-                        return;
+                        case InputActionChange.ActionStarted:
+                        case InputActionChange.ActionPerformed:
+                            var keyActionTrue = ((InputAction) obj).name;
+                            action[keyActionTrue] = true;
+                            currentAction = $"{((InputAction) obj).name}  {change}";
+                            break;
+                        case InputActionChange.ActionCanceled:
+                            var keyActionFalse = ((InputAction) obj).name;
+                            action[keyActionFalse] = false;
+                            currentAction = $"{((InputAction) obj).name}  {change}";
+                            break;
                     }
-
-                    action["Up"] = gamepad.dpad.up.isPressed;
-                    action["Down"] = gamepad.dpad.down.isPressed;
-                    action["Left"] = gamepad.dpad.left.isPressed;
-                    action["Right"] = gamepad.dpad.right.isPressed;
-                    action["Select"] = gamepad.selectButton.isPressed;
-                    action["Start"] = gamepad.startButton.isPressed;
-                    action["Square"] = gamepad.squareButton.isPressed;
-                    action["Triangle"] = gamepad.triangleButton.isPressed;
-                    action["Cross"] = gamepad.crossButton.isPressed;
-                    action["Circle"] = gamepad.circleButton.isPressed;
-                    action["L1"] = gamepad.leftShoulder.isPressed;
-                    action["L2"] = gamepad.leftStick.IsPressed();
-                    action["L3"] = gamepad.leftTrigger.isPressed;
-                    action["R1"] = gamepad.rightShoulder.isPressed;
-                    action["R2"] = gamepad.rightStick.IsPressed();
-                    action["R3"] = gamepad.rightTrigger.isPressed;
                 };
-            }
-        
+        }
 
+        // https://docs.unity3d.com/Packages/com.unity.inputsystem@1.0/manual/Gamepad.html
+        void FixedUpdate()
+        {
+            var gamepad = Gamepad.current;
+            if (gamepad != null)
+            {
+                ProcessGamePad(gamepad);
+            }
+        }
+
+        private void ProcessGamePad(Gamepad gamepad)
+        {
+            action["Up"] = gamepad[GamepadButton.DpadUp].isPressed;
+            action["Down"] = gamepad[GamepadButton.DpadDown].isPressed;
+            action["Left"] = gamepad[GamepadButton.DpadLeft].isPressed;
+            action["Right"] = gamepad[GamepadButton.DpadRight].isPressed;
+            action["Select"] = gamepad[GamepadButton.Select].isPressed;
+            action["Start"] = gamepad[GamepadButton.Start].isPressed;
+            action["Square"] = gamepad[GamepadButton.Square].isPressed;
+            action["Triangle"] = gamepad[GamepadButton.Triangle].isPressed;
+            action["Cross"] = gamepad[GamepadButton.Cross].isPressed;
+            action["Circle"] = gamepad[GamepadButton.Circle].isPressed;
+            action["L1"] = gamepad[GamepadButton.LeftShoulder].isPressed;
+            action["L2"] = gamepad[GamepadButton.LeftStick].isPressed;
+            action["L3"] = gamepad[GamepadButton.LeftTrigger].isPressed;
+            action["R1"] = gamepad[GamepadButton.RightShoulder].isPressed;
+            action["R2"] = gamepad[GamepadButton.RightStick].isPressed;
+            action["R3"] = gamepad[GamepadButton.RightTrigger].isPressed;
+        }
         public short ProcessInputState(uint port, uint device, uint index, uint id)
         {
             //currentAction = $"port: {port} device: {device} index: {index} id: {id}";
@@ -164,7 +158,6 @@ namespace RetroUnity
                 }
         }
 
-        
         public override string ToString()
         {
             return currentAction;
