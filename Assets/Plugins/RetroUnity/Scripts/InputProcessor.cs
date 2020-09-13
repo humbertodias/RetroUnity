@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 
 namespace RetroUnity
 {
@@ -34,8 +35,39 @@ namespace RetroUnity
                 }
             };
 
+            
+            InputSystem.onEvent +=
+                (eventPtr, device) =>
+                {
+                    // Ignore anything that isn't a state event.
+                    if (!eventPtr.IsA<StateEvent>() && !eventPtr.IsA<DeltaStateEvent>())
+                        return;
 
-        }
+                    var gamepad = device as Gamepad;
+                    if (gamepad == null)
+                    {
+                        // Event isn't for a gamepad or device ID is no longer valid.
+                        return;
+                    }
+
+                    action["Up"] = gamepad.dpad.up.isPressed;
+                    action["Down"] = gamepad.dpad.down.isPressed;
+                    action["Left"] = gamepad.dpad.left.isPressed;
+                    action["Right"] = gamepad.dpad.right.isPressed;
+                    action["Select"] = gamepad.selectButton.isPressed;
+                    action["Start"] = gamepad.startButton.isPressed;
+                    action["Square"] = gamepad.squareButton.isPressed;
+                    action["Triangle"] = gamepad.triangleButton.isPressed;
+                    action["Cross"] = gamepad.crossButton.isPressed;
+                    action["Circle"] = gamepad.circleButton.isPressed;
+                    action["L1"] = gamepad.leftShoulder.isPressed;
+                    action["L2"] = gamepad.leftStick.IsPressed();
+                    action["L3"] = gamepad.leftTrigger.isPressed;
+                    action["R1"] = gamepad.rightShoulder.isPressed;
+                    action["R2"] = gamepad.rightStick.IsPressed();
+                    action["R3"] = gamepad.rightTrigger.isPressed;
+                };
+            }
         
 
         public short ProcessInputState(uint port, uint device, uint index, uint id)
